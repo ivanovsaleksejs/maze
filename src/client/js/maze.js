@@ -3,12 +3,12 @@ import { Room } from "./room.js"
 import { fix, shuffle, randomElement } from "./utils.js"
 
 export class Maze {
-	constructor(n) {
-		this.size = n
-	}
-	reset() {
-		let n = this.size
-		this.maze = Array(n).fill(null).map(_ =>
+    constructor(n) {
+        this.size = n
+    }
+    reset() {
+        let n = this.size
+        this.maze = Array(n).fill(null).map(_ =>
             Array(n).fill(null).map(_ =>new Room())
         )
 
@@ -34,11 +34,11 @@ export class Maze {
                 this.maze[i][j].y=i
             }
         }
-	}
+    }
 
-	generateMaze() {
-		let n = this.size
-		this.reset()
+    generateMaze() {
+        let n = this.size
+        this.reset()
         // We generate loops or clusters using ramdom coordinates
         let coords = [...Array(n*n).keys()].map(x => [Math.floor(x/n), x%n])
         shuffle(coords)
@@ -71,7 +71,7 @@ export class Maze {
                 }
             }
         }
-		return true
+        return true
         /*
         if (!walkMaze(maze)) {
             return false;
@@ -79,7 +79,7 @@ export class Maze {
         */
 
     }
-	/**
+    /**
      * Generates an edge between current node and one of neighbour nodes.
      * Verifies if generator went in dead loop
     **/
@@ -160,40 +160,40 @@ export class Maze {
         }
 
     }
-	/**
+    /**
      * Checks if graph is completed and is strongly connected
     **/
-    checkMaze(maze) { 
-		return maze.reduce(
-			(acc, row) => acc && row.reduce(
-				(bcc, node) => bcc && !this.checkRoom(node)
-			)
-		)
-	}
+    checkMaze(maze) {
+        return maze.reduce(
+            (acc, row) => acc && row.reduce(
+                (bcc, node) => bcc && !this.checkRoom(node)
+            )
+        )
+    }
     /**
      * Checks if room has all edges generated but no entry edge or no exit edges
     **/
     checkRoom (room) {
         // All edges for node are generated...
-    	return (room.limit == room.edgesFrom.length + room.edgesTo.length)
-			&&
-			(
-				// ...but node has no enter or exit edge
-				room.edgesFrom.length == 0 || room.edgesTo.length == 0
-			)
-	}
-	/**
+        return (room.limit == room.edgesFrom.length + room.edgesTo.length)
+            &&
+            (
+                // ...but node has no enter or exit edge
+                room.edgesFrom.length == 0 || room.edgesTo.length == 0
+            )
+    }
+    /**
      * Checks if generator stuck in deadloop
     **/
     checkPath(node, path) {
-		return path.reduce((acc, elem) => acc || elem.x == node.x && elem.y == node.y)
-	}
+        return path.reduce((acc, elem) => acc || elem.x == node.x && elem.y == node.y)
+    }
 
-	render() {
+    render() {
         const mazeNode = document.querySelector('.maze')
         this.maze.map((row, y) => {
 
-			elementOpen("div", {class: "row"})
+            elementOpen("div", {class: "row"})
             row.map((room, x) => {
                 const classes = ["tdw", "rdw", "bdw", "ldw"]
                 room.edgesTo.map(edge => {
@@ -222,14 +222,14 @@ export class Maze {
                 })
                 const roomNode = document.createElement('div')
                 roomNode.className = "room " + classes.join(" ")
-				elementOpen("div", {class: "room " + classes.join(" ")})
-					elementVoid("div", {class: "t"})
-					elementVoid("div", {class: "r"})
-					elementVoid("div", {class: "b"})
-					elementVoid("div", {class: "l"})
-				elementClose("div")
+                elementOpen("div", {class: "room " + classes.join(" ")})
+                    elementVoid("div", {class: "t"})
+                    elementVoid("div", {class: "r"})
+                    elementVoid("div", {class: "b"})
+                    elementVoid("div", {class: "l"})
+                elementClose("div")
             })
-			elementClose("div")
+            elementClose("div")
         })
     }
 

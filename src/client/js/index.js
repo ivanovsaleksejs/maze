@@ -4,15 +4,14 @@ import { Maze } from "./maze.js"
 import "../css/index.css";
 
 const Layout = component({
-	render() {	
-		console.log(fix(f => x => x == 0 ? 1 : x * f(f)(x - 1))(5))
-		const maze = new Maze(8)
-		while(!maze.generateMaze());
+    render() {
+        const maze = new Maze(8)
+        while(!maze.generateMaze());
 
-		elementOpen("div", {class: "maze"})
-		maze.render()
-		elementClose("div")
-	}
+        elementOpen("div", {class: "maze"})
+        maze.render()
+        elementClose("div")
+    }
 })
 
 route("/", Layout)
