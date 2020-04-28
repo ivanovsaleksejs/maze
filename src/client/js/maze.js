@@ -1,6 +1,6 @@
 import { elementOpen, elementClose, elementVoid } from "wabi"
 import { Room } from "./room.js"
-import { fix, shuffle, randomElement } from "./utils.js"
+import { fix, shuffle, randomElement, findElement, nub } from "./utils.js"
 
 export class Maze {
     constructor(n) {
@@ -19,7 +19,7 @@ export class Maze {
         this.maze[n-1][0].limit   = 2
         this.maze[n-1][n-1].limit = 2
 
-        // Three for sode nodes
+        // Three for side nodes
         for (let i=1; i<n-1; i++) {
             this.maze[0][i].limit   = 3
             this.maze[n-1][i].limit = 3
@@ -41,7 +41,7 @@ export class Maze {
         this.reset()
         // We generate loops or clusters using ramdom coordinates
         let coords = [...Array(n*n).keys()].map(x => [Math.floor(x/n), x%n])
-        shuffle(coords)
+        shuffle(coords, 5)
 
         for (let i in coords) {
             let y = coords[i][0]
@@ -49,7 +49,7 @@ export class Maze {
 
             this.makeEdge({x:x, y:y}, {x:x, y:y}, [], 0)
 
-            if (!this.checkMaze(this.maze)) {
+            if (!this.checkMaze()) {
                 return false
             }
         }
@@ -60,8 +60,8 @@ export class Maze {
             for (let x = 0; x < n; x++) {
                 let room = this.maze[y][x]
                 if (room.limit != room.edgesFrom.length + room.edgesTo.length) {
-                    this.makeEdge({x:x, y:y}, {x:x, y:y}, [], 0)
-                    if (!this.checkMaze(this.maze)) {
+                    this.makeEdge({x:x, y:y}, {x:x, y:y}, [], 1)
+                    if (!this.checkMaze()) {
                         return false
                     }
                     if (x == 0 && y == 0) {
@@ -71,12 +71,12 @@ export class Maze {
                 }
             }
         }
-        return true
-        /*
-        if (!walkMaze(maze)) {
+
+        if (!this.walkMaze()) {
             return false;
         }
-        */
+
+        return true
 
     }
     /**
@@ -108,9 +108,10 @@ export class Maze {
             if (debug) {
                 console.log(JSON.stringify(nodes), JSON.stringify(unconnected))
             }
+            let node = null
 
             if (unconnected.length > 0) {
-                let node = randomElement(unconnected)
+                node = randomElement(unconnected)
 
                 // Can make edge from current node to random node
                 if (currentNode.limit - currentNode.edgesTo.length > 0) {
@@ -138,7 +139,7 @@ export class Maze {
 
             // Make a step over existing edge
             else {
-                let node = randomElement(currentNode.edgesTo)
+                node = randomElement(currentNode.edgesTo)
 
                 // No possible node to connect OR
                 // no new edges generated during whole walk (or deadloop)
@@ -163,24 +164,12 @@ export class Maze {
     /**
      * Checks if graph is completed and is strongly connected
     **/
-    checkMaze(maze) {
-        return maze.reduce(
+    checkMaze() {
+        return this.maze.reduce(
             (acc, row) => acc && row.reduce(
-                (bcc, node) => bcc && !this.checkRoom(node)
+                (bcc, room) => bcc && !room.checkRoom()
             )
         )
-    }
-    /**
-     * Checks if room has all edges generated but no entry edge or no exit edges
-    **/
-    checkRoom (room) {
-        // All edges for node are generated...
-        return (room.limit == room.edgesFrom.length + room.edgesTo.length)
-            &&
-            (
-                // ...but node has no enter or exit edge
-                room.edgesFrom.length == 0 || room.edgesTo.length == 0
-            )
     }
     /**
      * Checks if generator stuck in deadloop
@@ -189,48 +178,46 @@ export class Maze {
         return path.reduce((acc, elem) => acc || elem.x == node.x && elem.y == node.y)
     }
 
+    walkMaze() {
+        return this.maze.reduce(
+            (acc, row) => acc && row.reduce(
+                (bcc, node) => bcc && this.maze.length*this.maze.length == this.walkFromNode([], {x:node.x, y:node.y})
+            )
+        )
+    }
+
+    walkFromNode(path, current) {
+
+        fix(f => current => {
+            const x = current.x
+            const y = current.y
+            const currentNode = this.maze[y][x]
+            path.push({x:x, y:y})
+            currentNode.edgesTo.map(step => {
+                if (!findElement({x:step.x, y:step.y}, path)) {
+                    f(f)({x:step.x, y:step.y})
+                }
+            })
+        })(current)
+
+        path = nub(path)
+        return path.length
+    }
+
     render() {
-        const mazeNode = document.querySelector('.maze')
         this.maze.map((row, y) => {
 
             elementOpen("div", {class: "row"})
-            row.map((room, x) => {
-                const classes = ["tdw", "rdw", "bdw", "ldw"]
-                room.edgesTo.map(edge => {
-                    if (edge.x == x) {
-                        (edge.y > y)
-                            ? classes[2] = "bdd"
-                            : classes[0] = "tdu"
-                    }
-                    else {
-                        (edge.x > x)
-                            ? classes[1] = "rdr"
-                            : classes[3] = "ldl"
-                    }
-                })
-                room.edgesFrom.map(edge => {
-                    if (edge.x == x) {
-                        (edge.y > y)
-                            ? classes[2] = "bdu"
-                            : classes[0] = "tdd"
-                    }
-                    else {
-                        (edge.x > x)
-                            ? classes[1] = "rdl"
-                            : classes[3] = "ldr"
-                    }
-                })
-                const roomNode = document.createElement('div')
-                roomNode.className = "room " + classes.join(" ")
-                elementOpen("div", {class: "room " + classes.join(" ")})
-                    elementVoid("div", {class: "t"})
-                    elementVoid("div", {class: "r"})
-                    elementVoid("div", {class: "b"})
-                    elementVoid("div", {class: "l"})
-                elementClose("div")
-            })
+            row.map((room, x) => room.render(x, y))
             elementClose("div")
         })
+    }
+
+    putChar() {
+        const startNode = randomElement(randomElement(maze))
+        const character = document.createElement('div')
+        character.className = "character"
+        startNode.roomNode.appendChild(character)
     }
 
 }

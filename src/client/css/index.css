@@ -83,3 +83,6 @@
     height: 50px;
     background-size: 60%;
 }
+.character.second {
+    background: url('char2.svg') no-repeat center center;
+}
